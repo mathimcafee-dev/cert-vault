@@ -223,7 +223,7 @@ export default function InventoryPage({ user }) {
               </div>
 
               {/* Column header */}
-              <div style={{ display:'grid', gridTemplateColumns:'110px minmax(0,1fr) 90px 100px 130px 90px', padding:'8px 14px', background:'#f9fafb', borderBottom:'1px solid #f0f0f0' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'110px 200px 80px 100px 120px 80px', padding:'8px 14px', background:'#f9fafb', borderBottom:'1px solid #f0f0f0' }}>
                 {['Order ID','Domain','Status','Order Date','Cert Expiry','Alert'].map((h,i) => (
                   <span key={i} style={{ fontSize:10, fontWeight:700, color:'#9ca3af', textTransform:'uppercase', letterSpacing:'0.07em' }}>{h}</span>
                 ))}
@@ -272,7 +272,7 @@ function CertRow({ row, idx, total, onSelect }) {
 
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} onClick={()=>onSelect(row)}
-      style={{ display:'grid', gridTemplateColumns:'110px minmax(0,1fr) 90px 100px 130px 90px', padding:'10px 14px', borderBottom:idx<total-1?'1px solid #f5f5f5':'none', alignItems:'center', background:hov?'#f8f9ff':idx%2===0?'#fff':'#fdfdfd', transition:'background 0.1s', cursor:'pointer' }}>
+      style={{ display:'grid', gridTemplateColumns:'110px 200px 80px 100px 120px 80px', padding:'10px 14px', borderBottom:idx<total-1?'1px solid #f5f5f5':'none', alignItems:'center', background:hov?'#f8f9ff':idx%2===0?'#fff':'#fdfdfd', transition:'background 0.1s', cursor:'pointer' }}>
 
       <span style={{ fontFamily:'monospace', fontSize:11, color:'#6366f1', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row['Order ID']||'—'}</span>
 
