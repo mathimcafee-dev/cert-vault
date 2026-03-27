@@ -49,4 +49,9 @@ No markdown, no explanation. Only the raw JSON.`
   } catch {
     const extract = (text, type) => {
       const s = `-----BEGIN ${type}-----`, e = `-----END ${type}-----`
-      const si = text.indexOf(
+      const si = text.indexOf(s), ei = text.indexOf(e)
+      return si >= 0 && ei >= 0 ? text.slice(si, ei + e.length) : ''
+    }
+    return { csr: extract(raw, 'CERTIFICATE REQUEST'), privateKey: extract(raw, 'PRIVATE KEY') }
+  }
+}
