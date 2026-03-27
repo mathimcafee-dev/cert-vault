@@ -8,6 +8,8 @@ export default function Sidebar({ page, setPage, user, profile, csrCount, onLogo
       icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.3"/><path d="M1.5 5.5h13M5.5 5.5v9" stroke="currentColor" strokeWidth="1.3"/></svg> },
     { id: 'generate', label: 'Generate CSR',
       icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg> },
+    { id: 'inventory', label: 'Cert Inventory',
+      icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="13" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M13 9.5v1.5l1 1" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/></svg> },
   ]
 
   return (
