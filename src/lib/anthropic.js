@@ -1,4 +1,4 @@
-const API_KEY = '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'
+const API_KEY = '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'
 
 export async function generateCsrAndKey({ domain, organization, orgUnit, city, state, country, email, algorithm, keySize }) {
   const prompt = `You are a certificate authority tool. Generate a realistic PEM-format CSR and private key.
