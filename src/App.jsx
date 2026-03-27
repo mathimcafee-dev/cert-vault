@@ -4,6 +4,7 @@ import AuthPage          from './pages/AuthPage.jsx'
 import RegistryPage      from './pages/RegistryPage.jsx'
 import GeneratePage      from './pages/GeneratePage.jsx'
 import DetailPage        from './pages/DetailPage.jsx'
+import InventoryPage     from './pages/InventoryPage.jsx'
 import Sidebar           from './components/Sidebar.jsx'
 import ToastContainer, { useToast } from './components/Toast.jsx'
 
@@ -17,20 +18,17 @@ export default function App() {
   const [selectedCsr,  setSelectedCsr]  = useState(null)
   const { toasts, push } = useToast()
 
-  // Auth
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthReady(true) })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, sess) => setSession(sess))
     return () => subscription.unsubscribe()
   }, [])
 
-  // Profile
   useEffect(() => {
     if (!session?.user) { setProfile(null); return }
     supabase.from('profiles').select('*').eq('id', session.user.id).single().then(({ data }) => setProfile(data))
   }, [session])
 
-  // Load CSRs
   const loadCsrs = useCallback(async () => {
     if (!session?.user) return
     setCsrsLoading(true)
@@ -66,31 +64,31 @@ export default function App() {
 
   function handleSelect(csr) { setSelectedCsr(csr); setPage('detail') }
 
-  // Loading
   if (!authReady) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14 }}>
-      <div style={{ width: 36, height: 36, border: '3px solid #e5e7eb', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <div style={{ fontSize: 13, color: '#6b7280' }}>Loading CertVault…</div>
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:14 }}>
+      <div style={{ width:36, height:36, border:'3px solid #e5e7eb', borderTopColor:'#4f46e5', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+      <div style={{ fontSize:13, color:'#6b7280' }}>Loading CertVault…</div>
     </div>
   )
 
   if (!session) return <AuthPage onAuth={handleAuth} />
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden' }}>
       <Sidebar
         page={page}
-        setPage={p => { setPage(p); if (p === 'registry') setSelectedCsr(null) }}
+        setPage={p => { setPage(p); if (p==='registry') setSelectedCsr(null) }}
         user={session.user}
         profile={profile}
         csrCount={csrs.length}
         onLogout={handleLogout}
       />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f5f6fa' }}>
-        {page === 'registry' && <RegistryPage csrs={csrs} loading={csrsLoading} onSelect={handleSelect} onNew={() => setPage('generate')} push={push} />}
-        {page === 'generate' && <GeneratePage csrs={csrs} onSave={handleSaveCsr} push={push} />}
-        {page === 'detail' && selectedCsr && <DetailPage csr={selectedCsr} onDelete={() => handleDeleteCsr(selectedCsr.id)} onBack={() => setPage('registry')} push={push} />}
-        {page === 'detail' && !selectedCsr && <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Select a CSR from the registry.</div>}
+      <main style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:'#f5f6fa' }}>
+        {page==='registry'  && <RegistryPage csrs={csrs} loading={csrsLoading} onSelect={handleSelect} onNew={() => setPage('generate')} push={push} />}
+        {page==='generate'  && <GeneratePage csrs={csrs} onSave={handleSaveCsr} push={push} />}
+        {page==='inventory' && <InventoryPage user={session.user} />}
+        {page==='detail' && selectedCsr && <DetailPage csr={selectedCsr} onDelete={() => handleDeleteCsr(selectedCsr.id)} onBack={() => setPage('registry')} push={push} />}
+        {page==='detail' && !selectedCsr && <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#9ca3af' }}>Select a CSR from the registry.</div>}
       </main>
       <ToastContainer toasts={toasts} />
     </div>
