@@ -47,128 +47,108 @@ async function dnsValues(name, type) {
   return recs.map(r => r.data)
 }
 
-// SSL CHECK — 3-tier approach: HTTPS record (instant) + CAA (instant) + crt.sh (slow but detailed)
+// SSL CHECK — HTTPS record (instant proof) + crt.sh (cert details)
 async function checkSSLLabs(domain) {
   const result = {
-    grade:null, subject:null, issuer:null, expires:null, daysLeft:null,
-    keyAlg:null, keySize:null, protocols:[], vulns:[], hsts:false, hstsAge:null,
-    ipAddress:null, fromCache:false, source:null, error:null, crtEntries:[],
-    httpsDetected:false, caaIssuers:[],
+    grade: null, subject: null, issuer: null, expires: null, daysLeft: null,
+    protocols: [], vulns: [], hsts: false, hstsAge: null,
+    source: null, error: null, crtEntries: [], httpsDetected: false,
   }
 
-  // TIER 1: HTTPS DNS record (type 65) — proves SSL exists, <200ms
-  try {
-    const r = await fetch(
+  // Run HTTPS record check and crt.sh in PARALLEL — don't wait sequentially
+  const [httpsResult, crtResult] = await Promise.allSettled([
+
+    // HTTPS DNS record — instant proof SSL exists (<300ms)
+    fetch(
       `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=HTTPS`,
-      { headers:{'Accept':'application/dns-json'}, signal:AbortSignal.timeout(3000) }
-    )
-    if (r.ok) {
-      const d = await r.json()
-      if (d.Status === 0 && (d.Answer||[]).length > 0) {
-        result.httpsDetected = true
-        result.grade = 'Valid'
-        result.source = 'HTTPS DNS record'
+      { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(4000) }
+    ).then(r => r.json()).catch(() => null),
+
+    // crt.sh — single query with wildcard covers both exact + wildcard certs (one request, not two)
+    fetch(
+      `https://crt.sh/?q=${encodeURIComponent('%.' + domain)}&output=json`,
+      { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(20000) }
+    ).then(r => r.ok ? r.json() : null).catch(() => null),
+  ])
+
+  // Process HTTPS record
+  const httpsData = httpsResult.status === 'fulfilled' ? httpsResult.value : null
+  if (httpsData?.Status === 0 && httpsData.Answer?.length > 0) {
+    result.httpsDetected = true
+    result.grade = 'Valid'
+    result.source = 'HTTPS DNS record'
+  }
+
+  // Process crt.sh
+  const raw = crtResult.status === 'fulfilled' ? crtResult.value : null
+  if (Array.isArray(raw) && raw.length > 0) {
+    const now = Date.now()
+    const sorted = [...raw].sort((a, b) => new Date(b.not_before) - new Date(a.not_before))
+
+    // CT log table — recent 10 certs
+    result.crtEntries = sorted.slice(0, 10).map(c => {
+      const exp = new Date(c.not_after)
+      return {
+        issuer:   parseIssuer(c.issuer_name),
+        subject:  c.common_name || domain,
+        from:     fmtDate(new Date(c.not_before)),
+        to:       fmtDate(exp),
+        daysLeft: Math.ceil((exp - now) / 86400000),
       }
-    }
-  } catch {}
+    })
 
-  // TIER 2: CAA record — tells us which CA issued the cert, <200ms
-  try {
-    const r = await fetch(
-      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=CAA`,
-      { headers:{'Accept':'application/dns-json'}, signal:AbortSignal.timeout(3000) }
-    )
-    if (r.ok) {
-      const d = await r.json()
-      const issuers = (d.Answer||[])
-        .map(a => a.data?.match(/"([^"]+)"/)?.[1] || a.data?.split(' ').pop())
-        .filter(Boolean)
-      if (issuers.length > 0) {
-        result.caaIssuers = issuers
-        if (!result.issuer) result.issuer = issuers[0]
-      }
-    }
-  } catch {}
+    // Best valid cert — prefer exact domain match, fall back to any valid
+    const valid = sorted.filter(c => new Date(c.not_after).getTime() > now)
+    const dLow  = domain.toLowerCase()
+    const best  = valid.find(c =>
+      (c.common_name||'').toLowerCase() === dLow ||
+      (c.common_name||'').toLowerCase() === `*.${dLow}`
+    ) || valid[0]
 
-  // TIER 3: crt.sh — full cert details, can take 3-15s
-  try {
-    // Try exact domain first, then with leading dot for wildcards
-    const queries = [domain, `%.${domain}`]
-    for (const q of queries) {
-      const r = await fetch(
-        `https://crt.sh/?q=${encodeURIComponent(q)}&output=json`,
-        { headers:{'Accept':'application/json'}, signal:AbortSignal.timeout(15000) }
-      )
-      if (!r.ok) continue
-      const raw = await r.json()
-      if (!Array.isArray(raw) || raw.length === 0) continue
-
-      const now = Date.now()
-      const sorted = [...raw].sort((a,b) => new Date(b.not_before) - new Date(a.not_before))
-
-      // Build CT log entries table
-      result.crtEntries = sorted.slice(0,10).map(c => {
-        const exp = new Date(c.not_after)
-        return {
-          issuer:  extractIssuerOrg(c.issuer_name),
-          subject: c.common_name || domain,
-          from:    fmtDate(new Date(c.not_before)),
-          to:      fmtDate(exp),
-          daysLeft: Math.ceil((exp - now) / 86400000),
-        }
-      })
-
-      // Find best valid cert
-      const valid = sorted.filter(c => new Date(c.not_after).getTime() > now)
-      const best  = valid.find(c => {
-        const cn = (c.common_name||'').toLowerCase()
-        const dLow = domain.toLowerCase()
-        return cn === dLow || cn === `*.${dLow}` ||
-          (c.name_value||'').toLowerCase().split('\n').some(n => n.trim()===dLow||n.trim()===`*.${dLow}`)
-      }) || valid[0]
-
-      if (best) {
-        const exp     = new Date(best.not_after)
-        const daysLeft = Math.ceil((exp - now) / 86400000)
-        result.grade   = daysLeft > 0 ? 'Valid' : 'Expired'
-        result.subject = best.common_name || domain
-        result.issuer  = extractIssuerOrg(best.issuer_name)
-        result.expires = fmtDate(exp)
-        result.daysLeft = Math.max(0, daysLeft)
-        result.source  = 'Certificate Transparency (crt.sh)'
-        result.error   = daysLeft <= 0 ? 'Certificate has expired' : null
-        result.httpsDetected = true
-        break
-      }
-    }
-  } catch (e) {
-    // crt.sh timed out or failed — use HTTPS record result from Tier 1
-    if (!result.grade && !result.httpsDetected) {
-      result.error = 'CT log lookup timed out. ' + (result.httpsDetected ? '' : 'Could not verify SSL.')
-    }
-    if (result.httpsDetected) {
-      result.source = 'HTTPS DNS record (CT log timed out)'
-      result.error  = null
+    if (best) {
+      const exp      = new Date(best.not_after)
+      const daysLeft = Math.ceil((exp - now) / 86400000)
+      result.grade   = daysLeft > 0 ? 'Valid' : 'Expired'
+      result.subject = best.common_name || domain
+      result.issuer  = parseIssuer(best.issuer_name)
+      result.expires = fmtDate(exp)
+      result.daysLeft = Math.max(0, daysLeft)
+      result.source  = 'Certificate Transparency (crt.sh)'
+      result.httpsDetected = true
     }
   }
 
-  // If nothing worked at all
-  if (!result.grade && !result.httpsDetected) {
-    result.error = 'SSL certificate could not be verified. The domain may not have SSL installed.'
+  // Final state
+  if (!result.grade) {
+    if (result.httpsDetected) {
+      // HTTPS record confirmed SSL but crt.sh gave no details
+      result.grade  = 'Valid'
+      result.source = 'HTTPS DNS record'
+      result.issuer = '—'
+      result.error  = null
+    } else {
+      result.error = 'SSL certificate could not be verified.'
+    }
   }
 
   return result
 }
 
-function extractIssuerOrg(issuerName) {
-  if (!issuerName) return '—'
-  const org = issuerName.match(/[,; ]*O=([^,;/]+)/)?.[1]?.trim()
-  if (org && org.length > 2 && !org.match(/^(www\.|http)/)) return org
-  return issuerName.match(/CN=([^,;/]+)/)?.[1]?.trim() || issuerName.slice(0,50)
+// Parse issuer O= field from X.509 distinguished name
+// Example: "C=US, O=DigiCert Inc, CN=DigiCert TLS RSA SHA256 2020 CA1"
+function parseIssuer(dn) {
+  if (!dn) return '—'
+  // Match O= value — stop at comma or end
+  const m = dn.match(/O=([^,]+)/)
+  if (m) return m[1].trim()
+  // Fallback: CN=
+  const m2 = dn.match(/CN=([^,]+)/)
+  if (m2) return m2[1].trim()
+  return dn.slice(0, 40)
 }
 
 function fmtDate(d) {
-  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 
