@@ -1,18 +1,15 @@
-export default function RightPanel({ page, setPage, urgentCerts, dmarcHistory, recentActivity }) {
+export default function RightPanel({ page, setPage, urgentCerts, recentActivity }) {
   const daysUntil = str => {
     const m = str?.match(/^(\d{2})-(\d{2})-(\d{4})/)
     if (!m) return null
     const [,dd,mm,yyyy] = m
     return Math.ceil((new Date(`${yyyy}-${mm}-${dd}`) - new Date().setHours(0,0,0,0)) / 86400000)
   }
-  const scoreColor = s => s>=80?'#059669':s>=50?'#b45309':'#dc2626'
-  const scoreBg    = s => s>=80?'#f0fdf4':s>=50?'#fff7ed':'#fef2f2'
-
   const TOOLS = [
-    { emoji:'🔍', label:'DNS Lookup',  desc:'All record types', page:'dns'   },
-    { emoji:'📧', label:'DMARC',       desc:'Check any domain', page:'dmarc' },
-    { emoji:'🚫', label:'Blacklist',   desc:'25 DNS lists',     page:'dns'   },
-    { emoji:'⚖',  label:'Compare',    desc:'Two domains',      page:'dns'   },
+    { emoji:'🛡', label:'SSL Checker',  desc:'Verify certificate',  page:'cert-labs:ssl-checker'   },
+    { emoji:'📄', label:'CSR Decoder',  desc:'Parse CSR file',      page:'cert-labs:csr-decoder'   },
+    { emoji:'🔍', label:'Cert Decoder', desc:'X.509 details',       page:'cert-labs:cert-decoder'  },
+    { emoji:'🔐', label:'Key Matcher',  desc:'Match cert & key',    page:'cert-labs:key-matcher'   },
   ]
 
   const Lbl = ({ children }) => (
@@ -48,37 +45,6 @@ export default function RightPanel({ page, setPage, urgentCerts, dmarcHistory, r
           )
         }) : (
           <div style={{ fontSize:12, color:'#67c5d4', padding:'10px 0', textAlign:'center' }}>No urgent alerts 🎉</div>
-        )}
-      </div>
-
-      {/* DMARC health */}
-      <div style={{ padding:'15px', borderBottom:'1px solid #f0fdff' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:11 }}>
-          <div style={{ fontSize:9.5, fontWeight:700, color:'#67c5d4', textTransform:'uppercase', letterSpacing:'0.09em' }}>DMARC health</div>
-          <div style={{ fontSize:9.5, color:'#a5f3fc' }}>Live · updates on check</div>
-        </div>
-        {dmarcHistory && dmarcHistory.length > 0 ? dmarcHistory.slice(0,3).map((h,i) => (
-          <div key={i} onClick={() => setPage('dmarc')}
-            style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 0', borderBottom:i<2?'1px solid #f0fdff':'none', cursor:'pointer' }}>
-            <div style={{ width:38, height:38, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:900, flexShrink:0, background:scoreBg(h.score), color:scoreColor(h.score), letterSpacing:'-0.03em' }}>{h.score}</div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12, fontWeight:700, color:'#083344', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{h.domain}</div>
-              <div style={{ fontSize:10.5, color:'#9ca3af', marginTop:2 }}>
-                {h.dmarc_policy ? `p=${h.dmarc_policy}` : h.dmarc_status==='missing' ? 'No DMARC' : h.dmarc_status==='great'||h.dmarc_status==='good' ? 'p=reject/quarantine' : 'p=none'}
-                {' · '}{h.score>=80?'Strong':h.score>=50?'Moderate':'Weak'}
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:3, flexShrink:0 }}>
-              {[h.dmarc_status,h.spf_status,h.dkim_status].map((st,j) => (
-                <div key={j} style={{ width:8, height:8, borderRadius:2.5, background:st==='great'||st==='good'?'#10b981':st==='warn'||st==='missing'?'#f59e0b':'#dc2626' }}/>
-              ))}
-            </div>
-          </div>
-        )) : (
-          <div style={{ textAlign:'center', padding:'10px 0' }}>
-            <div style={{ fontSize:12, color:'#67c5d4', marginBottom:8 }}>No domains checked yet</div>
-            <button onClick={() => setPage('dmarc')} style={{ padding:'6px 14px', border:'1.5px solid #a5f3fc', borderRadius:8, background:'#f0fdff', fontSize:11.5, color:'#0e7490', cursor:'pointer', fontFamily:'inherit', fontWeight:600 }}>Check a domain →</button>
-          </div>
         )}
       </div>
 

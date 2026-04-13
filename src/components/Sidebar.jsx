@@ -7,10 +7,8 @@ const MAIN_NAV = [
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg> },
   { id: 'inventory', label: 'Cert Inventory',
     icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/><circle cx="13" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.3"/></svg> },
-  { id: 'dmarc',     label: 'DMARC & Email',
-    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v10H2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M2 6l6 4 6-4" stroke="currentColor" strokeWidth="1.3"/></svg> },
-  { id: 'dns',       label: 'DNS Toolkit',
-    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3"/><path d="M8 1.5C8 1.5 5 4 5 8s3 6.5 3 6.5M8 1.5C8 1.5 11 4 11 8s-3 6.5-3 6.5M1.5 8h13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> },
+  { id: 'cert-labs', label: 'Certificate Tools',
+    icon: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M10 2L3 6v4c0 4.418 3.134 8.555 7 9.95C13.866 18.555 17 14.418 17 10V6L10 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg> },
 ]
 
 const COMING_SOON = [
@@ -34,7 +32,7 @@ export default function Sidebar({ page, setPage, user, profile, csrCount, onLogo
           </div>
           <div>
             <div style={{ color:'#fff', fontSize:15, fontWeight:600, letterSpacing:'-0.02em' }}>CertVault</div>
-            <div style={{ color:'#6b7280', fontSize:10 }}>SSL & DNS Management</div>
+            <div style={{ color:'#6b7280', fontSize:10 }}>SSL & Certificate Management</div>
           </div>
         </div>
       </div>

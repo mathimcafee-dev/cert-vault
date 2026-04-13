@@ -6,11 +6,7 @@ import RegistryPage        from './pages/RegistryPage.jsx'
 import GeneratePage        from './pages/GeneratePage.jsx'
 import DetailPage          from './pages/DetailPage.jsx'
 import InventoryPage       from './pages/InventoryPage.jsx'
-import DmarcPage           from './pages/DmarcPage.jsx'
-import DnsPage             from './pages/DnsPage.jsx'
 import CertLabsPage        from './pages/CertLabsPage.jsx'
-import SecurityScanPage    from './pages/SecurityScanPage.jsx'
-import ComingSoonPage      from './pages/ComingSoonPage.jsx'
 import TopNav              from './components/TopNav.jsx'
 import LeftNav             from './components/LeftNav.jsx'
 import RightPanel          from './components/RightPanel.jsx'
@@ -25,10 +21,7 @@ export default function App() {
   const [csrsLoading,  setCsrsLoading]  = useState(false)
   const [selectedCsr,  setSelectedCsr]  = useState(null)
   const [inventory,    setInventory]    = useState([])
-  const [dmarcHistory, setDmarcHistory] = useState([])
   const [activity,     setActivity]     = useState([])
-  const [dmarcTab,     setDmarcTab]     = useState('single')
-  const [dnsTab,       setDnsTab]       = useState('lookup')
   const [certLabsTool, setCertLabsTool] = useState('ssl-checker')
   const { toasts, push } = useToast()
 
@@ -46,7 +39,6 @@ export default function App() {
     supabase.from('profiles').select('*').eq('id', session.user.id).single()
       .then(({ data }) => setProfile(data))
     loadInventory()
-    loadDmarcHistory()
   }, [session])
 
   async function loadInventory() {
@@ -54,14 +46,6 @@ export default function App() {
     const { data } = await supabase.from('certificate_inventory').select('*').eq('user_id', session.user.id)
     if (data) setInventory(data)
   }
-  async function loadDmarcHistory() {
-    if (!session?.user) return
-    try {
-      const { data } = await supabase.from('dmarc_history').select('*').eq('user_id', session.user.id).order('checked_at', { ascending:false }).limit(10)
-      if (data && data.length > 0) setDmarcHistory(data)
-    } catch {} // table may not exist — that's ok, will populate from live checks
-  }
-
   const loadCsrs = useCallback(async () => {
     if (!session?.user) return
     setCsrsLoading(true)
@@ -99,8 +83,6 @@ export default function App() {
   function handleSelect(csr) { setSelectedCsr(csr); setPage('detail') }
 
   const navigate = (p) => {
-    if (p.startsWith('dmarc:'))      { setDmarcTab(p.split(':')[1]);      setPage('dmarc');      return }
-    if (p.startsWith('dns:'))        { setDnsTab(p.split(':')[1]);        setPage('dns');        return }
     if (p.startsWith('cert-labs:'))  { setCertLabsTool(p.split(':')[1]);  setPage('cert-labs');  return }
     setPage(p)
     if (p === 'registry') setSelectedCsr(null)
@@ -151,20 +133,7 @@ export default function App() {
           {page==='inventory'  && <InventoryPage user={session.user}
             onUpload={() => { loadInventory(); addActivity({ icon:'📋', text:'CSV uploaded — inventory refreshed', time:'Just now' }) }}
           />}
-          {page==='dmarc'      && <DmarcPage user={session.user} initialTab={dmarcTab}
-            onCheck={result => {
-              setDmarcHistory(prev => {
-                const next = [result, ...prev.filter(h => h.domain !== result.domain)].slice(0,10)
-                return next
-              })
-              addActivity({ icon:'📧', text:`DMARC checked — ${result.domain} (${result.score}/100)`, time:'Just now' })
-            }}
-          />}
-          {page==='dns'        && <DnsPage initialTab={dnsTab}/>}
           {page==='cert-labs'  && <CertLabsPage initialTool={certLabsTool}/>}
-          {page==='scanner'     && <SecurityScanPage
-            onScanComplete={domain => addActivity({ icon:'🔎', text:`Security scan — ${domain}`, time:'Just now' })}
-          />}
           {page==='detail' && selectedCsr && <DetailPage csr={selectedCsr} onDelete={() => handleDeleteCsr(selectedCsr.id)} onBack={() => navigate('registry')} push={push}/>}
           {page==='detail' && !selectedCsr && <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#67c5d4', background:'#ecfeff' }}>Select a CSR from the registry.</div>}
         </main>
@@ -173,7 +142,6 @@ export default function App() {
             page={page}
             setPage={navigate}
             urgentCerts={urgentCerts}
-            dmarcHistory={dmarcHistory}
             recentActivity={activity}
           />
         )}

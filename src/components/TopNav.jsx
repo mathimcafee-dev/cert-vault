@@ -6,11 +6,10 @@ export default function TopNav({ page, setPage, user, profile, inventoryAlerts, 
   const [showUser, setShowUser] = useState(false)
 
   const TABS = [
-    { id:'overview',  label:'Overview'     },
-    { id:'inventory', label:'Certificates' },
-    { id:'dmarc',     label:'DMARC'        },
-    { id:'dns',       label:'DNS'          },
-    { id:'registry',  label:'CSR'          },
+    { id:'overview',   label:'Overview'      },
+    { id:'inventory',  label:'Certificates'  },
+    { id:'cert-labs',  label:'Cert Tools'    },
+    { id:'registry',   label:'CSR'           },
   ]
 
   return (
