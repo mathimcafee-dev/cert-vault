@@ -36,27 +36,6 @@ export default function LeftNav({ page, setPage, csrCount, inventoryAlerts }) {
       </div>
       <Div/>
       <div style={{ padding:'0 12px 4px' }}>
-        <Lbl>Email Security</Lbl>
-        <SI id="dmarc:single"   emoji="📧" label="DMARC Check"    bg="#eff8ff" active={page==='dmarc'}/>
-        <SI id="dmarc:bulk"     emoji="📨" label="Bulk DMARC"     bg="#f0fdf4"/>
-        <SI id="dmarc:spf-gen"  emoji="📮" label="SPF Generator"  bg="#fefce8"/>
-        <SI id="dmarc:dkim-gen" emoji="🛡" label="DKIM Generator" bg="#fdf4ff"/>
-        <SI id="dmarc:bimi-gen" emoji="🏷" label="BIMI Generator" bg="#fafafe"/>
-        <SI id="dmarc:phishing" emoji="🎣" label="Phishing Check" bg="#fff5f4"/>
-      </div>
-      <Div/>
-      <div style={{ padding:'0 12px 4px' }}>
-        <Lbl>DNS Toolkit</Lbl>
-        <SI id="dns:lookup"     emoji="🔍" label="DNS Lookup"     bg="#f0f9ff" active={page==='dns'}/>
-        <SI id="dns:health"     emoji="🏥" label="Domain Health"  bg="#f0fdf4"/>
-        <SI id="dns:propagation"emoji="🌍" label="Propagation"    bg="#fefce8"/>
-        <SI id="dns:blacklist"  emoji="🚫" label="Blacklist Check"bg="#fff5f4"/>
-        <SI id="dns:compare"    emoji="⚖"  label="DNS Compare"    bg="#f5f3ff"/>
-        <SI id="dns:ttl"        emoji="⏱" label="TTL Analyser"   bg="#fafafe"/>
-        <SI id="dns:reverse"    emoji="↩"  label="Reverse DNS"    bg="#f0fdf4"/>
-      </div>
-      <Div/>
-      <div style={{ padding:'0 12px 4px' }}>
         <Lbl>Certificate Labs</Lbl>
         <SI id="cert-labs:ssl-checker"   emoji="🛡" label="SSL Checker"      bg="#f0fdff"/>
         <SI id="cert-labs:csr-decoder"   emoji="📄" label="CSR Decoder"      bg="#fefce8"/>
